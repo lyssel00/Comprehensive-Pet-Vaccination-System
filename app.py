@@ -207,4 +207,16 @@ elif section == "🧪 UAT Charts":
             ax.set_title("UAT Satisfaction & Acceptance")
             st.pyplot(fig)
 
-
+# =============================
+# 📘 ABOUT SECTION
+# =============================
+elif section == "📘 About":
+    st.header("📘 About This Dashboard")
+    st.markdown("""
+    This interactive dashboard visualizes the **Technology Acceptance Model (TAM)** and **User Acceptance Testing (UAT)**
+    results for the *Community Pet Vaccination System (CPVS)* study.
+    
+    **Developed by:** Research Team  
+    **Purpose:** To present survey results in visual form for academic reporting and analysis.  
+    **Built with:** Streamlit, Pandas, and Matplotlib.
+    """)
