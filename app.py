@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ---- PAGE CONFIG ----
+# ✅ PAGE CONFIGURATION
 st.set_page_config(page_title="CPVS Data Visualization", layout="wide")
 
-# ---- STYLING ----
+# ✅ CUSTOM STYLING
 st.markdown(
     """
     <style>
@@ -32,121 +32,177 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
-# ---- HEADER ----
+# ✅ HEADER
 st.markdown('<div class="title">📊 CPVS TAM & UAT Visualization Dashboard</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Technology Transfer and Project Implementation of Pet Vaccination Software System for Municipality of Bunawan, Agusan del Sur</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="subtitle">Technology Transfer and Project Implementation of Pet Vaccination Software System for Municipality of Bunawan, Agusan del Sur: Enhancing Efficiency in Vaccination Management</div>',
+    unsafe_allow_html=True
+)
 st.markdown("---")
 
-# ---- SIDEBAR ----
+# ✅ SIDEBAR: File Upload
 st.sidebar.header("📂 Upload Dataset")
 uploaded_file = st.sidebar.file_uploader("Upload Excel Dataset (.xlsx)", type=["xlsx"])
 
-# ---- CHECK UPLOAD ----
+# ✅ IF FILE NOT UPLOADED
 if uploaded_file is None:
     st.info("👋 Please upload an Excel dataset (.xlsx) to view the charts.")
-    st.stop()
+else:
+    try:
+        df = pd.read_excel(uploaded_file, engine="openpyxl")
+        st.success("✅ Dataset successfully loaded!")
 
-# ---- LOAD DATA ----
-try:
-    df = pd.read_excel(uploaded_file, engine="openpyxl")
-    st.success("✅ Dataset successfully loaded!")
-except Exception as e:
-    st.error(f"❌ Error loading dataset: {e}")
-    st.stop()
+        # ✅ SIDEBAR MENU
+        section = st.sidebar.radio(
+            "Select Section:",
+            ("🏫 TAM Charts", "🧪 UAT Charts", "📘 About")
+        )
 
-# ---- SIDEBAR MENU ----
-section = st.sidebar.radio(
-    "Select Section:",
-    ("🏫 TAM Charts", "🧪 UAT Charts", "📘 About")
-)
+        # =============================
+        # 🏫 TECHNOLOGY ACCEPTANCE MODEL (TAM)
+        # =============================
+        if section == "🏫 TAM Charts":
+            st.header("🏫 Technology Acceptance Model (TAM)")
 
-# =============================
-# 🏫 TECHNOLOGY ACCEPTANCE MODEL (TAM)
-# =============================
-if section == "🏫 TAM Charts":
-    st.header("🏫 Technology Acceptance Model (TAM)")
+            tam_chart = st.selectbox(
+                "Select a TAM construct:",
+                [
+                    "Perceived Usefulness (PU) - Pie Chart",
+                    "Perceived Ease of Use (PEOU) - Bar Chart",
+                    "Attitude Toward Using (ATU) - Line Chart",
+                    "Behavioral Intention (BI) - Stacked Bar Chart"
+                ]
+            )
 
-    tam_chart = st.selectbox(
-        "Select a TAM construct:",
-        [
-            "Perceived Usefulness (PU)",
-            "Perceived Ease of Use (PEOU)",
-            "Attitude Toward Using (ATU)",
-            "Behavioral Intention (BI)"
-        ]
-    )
+            if "Category" not in df.columns:
+                st.error("❌ The dataset must have a 'Category' column.")
+            else:
+                # --- PIE CHART ---
+                if tam_chart.startswith("Perceived Usefulness"):
+                    selected_data = df[df["Category"] == "Perceived Usefulness (PU)"].iloc[0, 1:]
+                    labels = selected_data.index.tolist()[::-1]
+                    values = selected_data.values.tolist()[::-1]
+                    fig, ax = plt.subplots(figsize=(6, 5))
+                    ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+                    ax.set_title("Perceived Usefulness (PU)")
+                    st.pyplot(fig)
 
-    if "Category" not in df.columns:
-        st.error("❌ The dataset must contain a 'Category' column.")
-        st.stop()
+                # --- BAR CHART ---
+                elif tam_chart.startswith("Perceived Ease of Use"):
+                    selected_data = df[df["Category"] == "Perceived Ease of Use (PEOU)"].iloc[0, 1:]
+                    labels = selected_data.index.tolist()
+                    values = selected_data.values.tolist()
+                    fig, ax = plt.subplots(figsize=(7, 5))
+                    ax.bar(labels, values, color="royalblue", edgecolor="black")
+                    ax.set_title("Perceived Ease of Use (PEOU)")
+                    st.pyplot(fig)
 
-    data = df[df["Category"].str.contains(tam_chart.split()[0], case=False, na=False)]
+                # --- LINE CHART ---
+                elif tam_chart.startswith("Attitude Toward Using"):
+                    selected_data = df[df["Category"] == "Attitude Toward Using (ATU)"].iloc[0, 1:]
+                    labels = selected_data.index.tolist()
+                    values = selected_data.values.tolist()
+                    fig, ax = plt.subplots(figsize=(8, 5))
+                    ax.plot(labels, values, marker="o", color="mediumseagreen", linewidth=2)
+                    ax.set_title("Attitude Toward Using (ATU)")
+                    st.pyplot(fig)
 
-    if data.empty:
-        st.warning(f"⚠️ No data found for {tam_chart}.")
-    else:
-        selected_data = data.iloc[0, 1:]
-        chart_type = st.radio("Select Chart Type:", ["Pie", "Bar", "Line"])
-        fig, ax = plt.subplots(figsize=(7, 5))
+                # --- STACKED BAR ---
+                elif tam_chart.startswith("Behavioral Intention"):
+                    selected_data = df[df["Category"] == "Behavioral Intention (BI)"]
+                    if selected_data.empty:
+                        st.warning("⚠️ No data found for 'Behavioral Intention (BI)'")
+                    else:
+                        scales = ["3-Neutral", "4-Agree", "5-Strongly Agree"]
+                        colors = ["moccasin", "lightskyblue", "royalblue"]
 
-        if chart_type == "Pie":
-            ax.pie(selected_data, labels=selected_data.index, autopct="%1.1f%%", startangle=90)
-        elif chart_type == "Bar":
-            ax.bar(selected_data.index, selected_data.values, color="royalblue", edgecolor="black")
-        else:
-            ax.plot(selected_data.index, selected_data.values, marker="o", color="seagreen", linewidth=2)
+                        fig, ax = plt.subplots(figsize=(8, 5))
+                        bottom = [0]
+                        for i, scale in enumerate(scales):
+                            ax.bar(
+                                ["Behavioral Intention (BI)"],
+                                selected_data[scale],
+                                bottom=bottom,
+                                label=scale,
+                                color=colors[i]
+                            )
+                            bottom = [a + b for a, b in zip(bottom, selected_data[scale])]
+                        ax.legend(title="Scale", bbox_to_anchor=(1.05, 1), loc="upper left")
+                        ax.set_title("Behavioral Intention (BI)")
+                        st.pyplot(fig)
 
-        ax.set_title(tam_chart)
-        st.pyplot(fig)
+        # =============================
+        # 🧪 USER ACCEPTANCE TESTING (UAT)
+        # =============================
+        elif section == "🧪 UAT Charts":
+            st.header("🧪 User Acceptance Testing (UAT)")
 
-# =============================
-# 🧪 USER ACCEPTANCE TESTING (UAT)
-# =============================
-elif section == "🧪 UAT Charts":
-    st.header("🧪 User Acceptance Testing (UAT)")
+            uat_chart = st.selectbox(
+                "Select a UAT construct:",
+                [
+                    "Functionality (Pie Chart)",
+                    "Usability (Bar Chart)",
+                    "Performance (Line Chart)",
+                    "Satisfaction & Acceptance (Stacked Bar Chart)"
+                ]
+            )
 
-    uat_chart = st.selectbox(
-        "Select a UAT construct:",
-        [
-            "Functionality",
-            "Usability",
-            "Performance",
-            "Satisfaction & Acceptance"
-        ]
-    )
+            if uat_chart.startswith("Functionality"):
+                selected_data = df[df["Category"] == "UAT Functionality"].iloc[0, 1:]
+                labels = selected_data.index.tolist()[::-1]
+                values = selected_data.values.tolist()[::-1]
+                fig, ax = plt.subplots(figsize=(6, 5))
+                ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=90)
+                ax.set_title("UAT Functionality")
+                st.pyplot(fig)
 
-    data = df[df["Category"].str.contains(uat_chart, case=False, na=False)]
+            elif uat_chart.startswith("Usability"):
+                selected_data = df[df["Category"] == "UAT Usability"].iloc[0, 1:]
+                labels = selected_data.index.tolist()
+                values = selected_data.values.tolist()
+                fig, ax = plt.subplots(figsize=(7, 5))
+                ax.bar(labels, values, color="lightcoral", edgecolor="black")
+                ax.set_title("UAT Usability")
+                st.pyplot(fig)
 
-    if data.empty:
-        st.warning(f"⚠️ No data found for {uat_chart}.")
-    else:
-        selected_data = data.iloc[0, 1:]
-        chart_type = st.radio("Select Chart Type:", ["Pie", "Bar", "Line"])
-        fig, ax = plt.subplots(figsize=(7, 5))
+            elif uat_chart.startswith("Performance"):
+                selected_data = df[df["Category"] == "UAT Performance"].iloc[0, 1:]
+                labels = selected_data.index.tolist()
+                values = selected_data.values.tolist()
+                fig, ax = plt.subplots(figsize=(8, 5))
+                ax.plot(labels, values, marker="o", color="darkorange", linewidth=2)
+                ax.set_title("UAT Performance")
+                st.pyplot(fig)
 
-        if chart_type == "Pie":
-            ax.pie(selected_data, labels=selected_data.index, autopct="%1.1f%%", startangle=90)
-        elif chart_type == "Bar":
-            ax.bar(selected_data.index, selected_data.values, color="salmon", edgecolor="black")
-        else:
-            ax.plot(selected_data.index, selected_data.values, marker="o", color="darkorange", linewidth=2)
+            elif uat_chart.startswith("Satisfaction"):
+                uat_subset = df[df["Category"].str.contains("UAT", na=False)]
+                categories = uat_subset["Category"]
+                scales = ["3-Neutral", "4-Agree", "5-Strongly Agree"]
+                colors = ["moccasin", "lightskyblue", "royalblue"]
 
-        ax.set_title(f"UAT {uat_chart}")
-        st.pyplot(fig)
+                fig, ax = plt.subplots(figsize=(9, 6))
+                bottom = [0] * len(categories)
+                for i, scale in enumerate(scales):
+                    ax.bar(categories, uat_subset[scale], bottom=bottom, label=scale, color=colors[i])
+                    bottom = [a + b for a, b in zip(bottom, uat_subset[scale])]
+                ax.legend(title="Scale", bbox_to_anchor=(1.05, 1), loc="upper left")
+                ax.set_title("UAT Satisfaction & Acceptance")
+                plt.xticks(rotation=15)
+                st.pyplot(fig)
 
-# =============================
-# 📘 ABOUT
-# =============================
-elif section == "📘 About":
-    st.header("📘 About This Dashboard")
-    st.markdown("""
-    This dashboard visualizes the **Technology Acceptance Model (TAM)** and **User Acceptance Testing (UAT)** data
-    for the *Community Pet Vaccination System (CPVS)* research project.
+        # =============================
+        # 📘 ABOUT SECTION
+        # =============================
+        elif section == "📘 About":
+            st.header("📘 About this Dashboard")
+            st.write("""
+                This Streamlit dashboard is designed to visualize the **Technology Acceptance Model (TAM)**
+                and **User Acceptance Testing (UAT)** results for the **Comprehensive Pet Vaccination System (CPVS)** thesis project.
+                It helps interpret participant feedback through interactive charts.
+            """)
 
-    **Developed by:** Research Team  
-    **Purpose:** To interpret and visualize respondent feedback effectively.  
-    **Tools Used:** Streamlit, Pandas, Matplotlib
-    """)
+    except Exception as e:
+        st.error(f"❌ An error occurred while processing the file: {e}")
